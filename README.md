@@ -13,46 +13,114 @@
 [![NPM](https://nodei.co/npm/winston-rx.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/winston-rx/)
 <!-- endbadge -->
 
-A simple, full-functionality starter package for node modules, built in TypeScript.
+A simple POC [winston](https://github.com/winstonjs/winston) clone, which leverages rxjs fully, while providing a simple data-configuration
+ability.
 
-The goal is to be simple, lean and automated.
+This is fully functional, with a reasonable test suite, but it's still
+an early version. You have been warned.
 
-- minimize dependencies.
-- use simpler-to-understand dependencies when necessary.
-- enable a move-fast mindset.
-
-Support for the following is baked in:
-
-- [x] application config via [config](https://github.com/lorenwest/node-config)
-- [x] configurable logging via [winston-cfg](https://github.com/sramam/winston-cfg)
-- [x] [tslint](https://github.com/palantir/tslint)
-- [x] build automation
-- [x] [ava](https://github.com/avajs/ava) test-automation
-- [x] test coverage (remapped to TypeScript)
-- [x] checks dependencies for known vulnerabilities before commit.
-- [x] CI integration
-- [x] Code-of-conduct
-- [x] Semantic Release
+This is currently not published to npm. Please use a git-url to install.
 
 ## Usage
 
-```bash
-mkdir myApp
-cd myApp
-git clone https://github.com/sramam/winston-rx
-```
-
-Since we are using a git repo as a template, a little reconfiguration is
-required. This has been encapsulated into a simple node script -
-[.reinit](./.reinit). The script destroys itself after execution, giving
-your spanking new project a clean start.
+### Installation
 
 ```bash
-node ./.reinit
+npm install https://github.com/sramam/winston-rx
 ```
 
-At this point, explore `./src` for the bare bones example.
-Typically, you'd want to modify `./src/index.ts` to get started.
+### Console logger
+
+```typescript
+import {
+  init,
+  TimeFormat,
+ } from '..';
+
+const cfg = {
+  loggers: {
+    default: {
+      name: 'default'
+    }
+  },
+  transports: {
+    default: {
+      type: 'console',
+      level: 'info',
+      timeFormat: <TimeFormat>'none',
+      loggers: ['default']
+    }
+  }
+}
+const instances = init(cfg);
+const log = instances.loggers['default'].log;
+log.info(`Just an info message`)
+log.error(`this is a mock error for testing`)
+log.silly(`It' silly how much information one can log`, { extra: 'data' })
+
+```
+
+### File logger
+
+winston-rx uses a notion of sensible defaults for minimal config. The file logger is integrated with the [rotating-file-stream](https://www.npmjs.com/package/rotating-file-stream)
+
+```typescript
+import {
+  init,
+  TimeFormat,
+ } from '..';
+
+const fname = './path/to/log_file.json';
+
+const cfg = {
+  loggers: {
+    default: {
+      name: 'default',
+    },
+    app: {
+      name: 'app'
+    }
+  },
+  transports: {
+    default: {
+      type: 'file',
+      fname,
+      size: '200B',
+      level: 'warn',
+      timeFormat: <TimeFormat>'none',
+      formatter: 'json',
+      loggers: ['default', 'app']
+    }
+  }
+}
+const instances = init(cfg);
+const log = instances.loggers['default'].log;
+const app = instances.loggers['app'].log;
+log.error(`this is a mock error for testing`)
+app.error(`mock error from app`)
+// these will not be logged
+log.info(`Just an info message`)
+log.silly(`It' silly how much information one can log`, { extra: 'data' })
+
+```
+
+### Timeformats
+
+The code above has been picked from the test cases, which are trouble-some when timestamps are involved. Hence the timeFormat config is set to 'none'.
+
+The following TimeFormats are supported:
+
+```typescript
+export type TimeFormat =
+  'none' |
+  'locale-date' |
+  'locale-time' |
+  'utc' |
+  'ms' |
+  'iso';
+```
+
+See [time-format test cases](./src/test/timeFormat.ts) for more details.
 
 ## Development Tooling
 
